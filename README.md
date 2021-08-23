@@ -1,4 +1,4 @@
-# Big Data y Machine Learning Aplicado al Mercado Inmobiliario
+# Big Data and Machine Learning en el Mercado Inmobiliario
 
 ## clase_1: Introducción a R y Rstudio
 
