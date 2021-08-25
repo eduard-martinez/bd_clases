@@ -38,10 +38,13 @@ ameni_polygon = ameni_osm$osm_polygons
 
 # plot data
 leaflet() %>% addTiles() %>% 
-addCircleMarkers(data=bar_point , weight=1 , col="green") %>%
-addPolylines(data=bar_polygon,color="red",opacity=0.7,weight=4) 
+addCircleMarkers(data=ameni_point , weight=1 , col="green") %>%
+addPolylines(data=ameni_polygon,color="red",opacity=0.7,weight=4) 
 
 # rbind data
+ameni_point$osm_id %in% ameni_polygon$osm_id %>% table()
+ameni_polygon = ameni_polygon %>% rename(name_pol = name)
+join_amenity = st_intersection(ameni_point,ameni_polygon)
 amenitys = rbind(ameni_point %>% select(osm_id,amenity) ,
                  ameni_polygon  %>% st_centroid() %>% select(osm_id,amenity)) %>%
            subset(is.na(amenity)==F)
@@ -60,8 +63,8 @@ quito = quito$osm_multipolygons %>% subset(admin_level==9)
 
 # plot basic map
 p = ggplot() + geom_sf(data=quito, col="orange" , fill=NA , size=0.3) + 
-geom_sf(data=street, col="black" , size=0.05) + theme_bw() + 
-geom_sf(data=amenitys,size=0.8,shape=5,aes(col=amenity)) 
+geom_sf(data=street, col="black" , size=0.05)  + 
+geom_sf(data=amenitys,size=0.8,shape=5,aes(col=amenity)) + theme_bw()
 p 
 
 # add scalebar and north symbol
@@ -70,19 +73,16 @@ scalebar(data=quito , dist=5 , dist_unit="km" , transform=T , model="WGS84")
 p
 
 # make zoom
+
 p = p + coord_sf(xlim=c(-78.615,-78.44),ylim=c(-0.36,-0.05))
 p
 
 # remove axis-labels
-p = p + labs(x="",y="")
+p = p + labs(x="",y="","Amenitys")
 p
 
 # save plot
 ggsave(plot=p , filename="clase_3/output/quito_map.pdf" , width=6.5 , height=8)
 
-
-#=========================#
-# [1.] OpenStreetMap Data #
-#=========================#
 
 
