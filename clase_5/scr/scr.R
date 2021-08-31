@@ -179,27 +179,26 @@ services()
 ## ver datos disponibles
 get_products()
 
-#
+# establecer el area de interes
 medellin_sp = as_Spatial(medellin)
 set_aoi(medellin_sp)
 
-##
+## Obtener las url de los datos
 records = get_records(time_range = c("2021-05-15", "2021-05-20"),
                        products = c("sentinel-2"))
 
-##
+## Verificar disponibilidad de los raster
 records = check_availability(records, verbose = TRUE)
 records = subset(records,download_available==T & level=="Level-2A")
 
-
-##  
+## Visualizar datos
 view_records(records)
 records = get_previews(records,dir_out = "clase_5/output") 
 sentinel = stack("clase_5/output/sentinel-2/S2A_MSIL2A_20210516T153621_N0300_R068_T18NVM_20210516T194809_preview.tif")
-plot(sentinel)
+plot(sentinel , col=magma(18))
 plotRGB(sentinel,r = 1, g = 2, b = 3) 
 
-##
+## Calidad de los raster (cobertura de nubes)
 records = calc_cloudcov(records,dir_out = "clase_5/output") 
 
 ## Descargar los raster
@@ -208,6 +207,47 @@ records <- get_data(records,dir_out = "clase_5/output")
 #====================#
 # [5.] Interpolacion #
 #====================#
+
+# clean environment
+rm(list=ls())
+
+# load data
+data(meuse) # paquete sp
+meuse %>% head()
+coordinates(meuse) <- c("x", "y")
+spplot(meuse, "zinc", do.log = T, colorkey = TRUE)
+
+data(meuse.grid) # paquete sp
+meuse.grid %>% head()
+coordinates(meuse.grid) <- c("x", "y")
+meuse.grid <- as(meuse.grid, "SpatialPixelsDataFrame")
+spplot(idw.out, "var1.pred", do.log = T, colorkey = TRUE)
+
+## 1 Non-geostatistical Interpolation Methods
+
+## 1.1 Inverse Distance Weighted Interpolation
+idw.out <- gstat::idw(zinc ~ 1, meuse, meuse.grid, idp = 2.5)
+as.data.frame(idw.out) %>% head()
+spplot(idw.out, "var1.pred", do.log = T, colorkey = TRUE)
+
+## 1.2 Linear Regression
+spplot(meuse.grid, "dist", do.log = T, colorkey = TRUE)
+
+zn.lm <- lm(log(zinc) ~ sqrt(dist), meuse)
+meuse.grid$pred <- predict(zn.lm, meuse.grid)
+meuse.grid$se.fit <- predict(zn.lm, meuse.grid, se.fit = TRUE)$se.fit
+as.data.frame(meuse.grid) %>% head()
+spplot(meuse.grid, "pred", do.log = T, colorkey = TRUE)
+
+meuse.k1 <- krige(log(zinc) ~ sqrt(dist), meuse, meuse.grid) # Equivalente a OLS
+as.data.frame(meuse.k1) %>% head()
+spplot(meuse.k1, "var1.pred", do.log = T, colorkey = TRUE)
+
+meuse.k2 <- krige(log(zinc) ~ 1, meuse, meuse.grid , degree=2) # Polinomio de grado 2
+as.data.frame(meuse.k2) %>% head()
+spplot(meuse.k2, "var1.pred", do.log = T, colorkey = TRUE)
+
+
 
 
 
