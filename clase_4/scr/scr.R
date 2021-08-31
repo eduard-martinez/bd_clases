@@ -13,7 +13,10 @@ p_load(tidyverse,sf,sp,osmdata,leaflet,spdep,png,grid,gstat,ggsn,gtools,spatialr
 # gstat: variogram
 # png, grid: leer graficos
 # gtools: quantcut
-# spatialreg:  
+# spatialreg: lagsarlm 
+
+# Material de Ignacio
+browseURL("https://ignaciomsarmiento.github.io/2017/02/07/An-Introduction-to-Spatial-Econometrics-in-R.html")
 
 #=================#
 # [1.] Motivacion #
@@ -46,8 +49,8 @@ boston$estimate = boston$estimate/1000
 # sf to sp 
 class(boston)
 boston_sp = boston %>% 
-            mutate(estimate=ifelse(is.na(estimate),mean(estimate,na.rm=T),estimate)) %>% 
-             as_Spatial()
+            mutate(estimate=ifelse(is.na(estimate),mean(estimate,na.rm=T),estimate)) %>% # 501,543
+            as_Spatial()
 class(boston_sp)
 
 # vecinos espaciales
@@ -55,7 +58,7 @@ dev.off()
 grid.raster( readPNG("clase_4/pics/contiguity_matrixes.png"))
 
 # definir vecinos
-nb_boston = poly2nb(pl=boston_sp , queen=F) # opcion reina
+nb_boston = poly2nb(pl=boston_sp , queen=T) # opcion reina
 nb_boston
 class(nb_boston)
 plot(boston_sp, border="grey60")
@@ -108,7 +111,7 @@ ggsave("clase_4/output/map_b.pdf")
 
 # variograms
 dev.off()
-grid.raster(readPNG("clase_4/pics/vario_equation.png"))
+grid.raster(readPNG("clase_4/pics/vario_equation.png")) # Aplied Spatial Data in R
 # h = distancia
 # Z(s) = Variable aleatorio para la ubicacion s
 variogram(estimate ~ 1, boston_sp, cloud = F , cressie=T) %>% plot()
@@ -172,12 +175,19 @@ school = opq(bbox = getbb("Boston USA")) %>% add_osm_feature(key = "amenity", va
          osmdata_sf() %>%  .$osm_points %>% select(osm_id)  %>% mutate(amenity="school")
 amenity = rbind(bar,pub) %>% rbind(.,restaurant) %>% rbind(.,cafe) %>% rbind(.,school)
 
+# plot
+ggplot() + geom_sf(data = boston , fill=NA , col="black") + geom_sf(data=amenity,col="red")
+
 # intersect shapes
 amenity = st_transform(amenity,crs = st_crs(boston))
+amenity2 = st_intersection(amenity,boston)
 amenity = amenity[boston,]
 
+# plot
+ggplot() + geom_sf(data = boston , fill=NA , col="black") + geom_sf(data=amenity,col="red")
+
 # joint layers
-amenity_boston = st_join(amenity,boston)
+amenity_boston = st_join(x = amenity , y = boston)
 st_geometry(amenity_boston) = NULL
 df = amenity_boston %>% mutate(conteo = 1) %>% group_by(GEOID,amenity) %>% 
      summarize(total = sum(conteo)) 
@@ -187,10 +197,6 @@ df = lapply(df, function(x) x = ifelse(is.na(x),0,x)) %>% data.frame()
 # estimaciones
 boston = left_join(boston,df,"GEOID")
 lm(estimate ~ bar + cafe + pub + restaurant + school , data = boston) %>% summary()
-
-# intentemos agregar el rezago espacial del precio de la vivienda
-sar.chi<-lagsarlm(estimate ~ bar + cafe + pub + restaurant + school , data=boston_sp@data, w_boston)
-summary(sar.chi)
 
 # veamos la correlacion espacial entre dos variables
 boston = left_join(boston_sp@data,df,"GEOID")
@@ -212,10 +218,13 @@ moran.plot3 <- function(x,y,wfile) # funcion tomada de Juan Tomas Sayago (github
     title(paste("Moran Scatterplot I= ",format(round(mori,4)))) 
 } 
 
+w_boston = nb2listw(nb_boston, style = "B", zero.policy = T)
+w_boston 
 moran.plot3(boston_sp$estimate,boston_sp$restaurant, w_boston)
 
-
-
+# intentemos agregar el rezago espacial del precio de la vivienda
+sar.chi = lagsarlm(estimate ~ bar + cafe + pub + restaurant + school , data=boston_sp@data, w_boston , na.action = F)
+summary(sar.chi)
 
 
 
