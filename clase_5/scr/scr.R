@@ -173,21 +173,45 @@ login_earthdata(username = "ef.martinezg")
 browseURL("https://scihub.copernicus.eu/dhus/#/self-registration")    
 login_CopHub(username = "ef.martinezg")
 
+# Print the status of all services:
+services()
+
 ## ver datos disponibles
 get_products()
 
 #
-records <- get_records(time_range = c("2020-05-15", "2020-05-30"),
-                       products = c("modis_mcd64a1_v6"))
+medellin_sp = as_Spatial(medellin)
+set_aoi(medellin_sp)
+
+##
+records = get_records(time_range = c("2021-05-15", "2021-05-20"),
+                       products = c("sentinel-2"))
+
+##
+records = check_availability(records, verbose = TRUE)
+records = subset(records,download_available==T & level=="Level-2A")
 
 
+##  
+view_records(records)
+records = get_previews(records,dir_out = "clase_5/output") 
+sentinel = stack("clase_5/output/sentinel-2/S2A_MSIL2A_20210516T153621_N0300_R068_T18NVM_20210516T194809_preview.tif")
+plot(sentinel)
+plotRGB(sentinel,r = 1, g = 2, b = 3) 
 
+##
+records = calc_cloudcov(records,dir_out = "clase_5/output") 
 
-
+## Descargar los raster
+records <- get_data(records,dir_out = "clase_5/output")
 
 #====================#
 # [5.] Interpolacion #
 #====================#
+
+
+
+
 
 
 
