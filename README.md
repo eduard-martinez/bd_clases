@@ -26,7 +26,19 @@ La presentación se encuentra [[aquí](https://eduard-martinez.gitlab.io/intro-g
 
 La presentación se encuentra [[aquí](https://eduard-martinez.gitlab.io/osm-data)].
 
+## clase_4: Rezago espacial
+
+  * Autocorrelación y Semivariogramas
+  
+  * Aplicación en R (precios de viviendas)
+
+La presentación se encuentra [[aquí](https://eduard-martinez.gitlab.io/)].
 
 
+## clase_5: Datos Raster
 
+  * Introducción a datos raster
+  
+  * Aplicación en R (luminosidad y uso de suelo)
 
+La presentación se encuentra [[aquí](https://eduard-martinez.gitlab.io/)].

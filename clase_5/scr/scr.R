@@ -248,16 +248,19 @@ spplot(idw.out, "var1.pred", do.log = T, colorkey = TRUE)
 ## 1.2 Linear Regression
 spplot(meuse.grid, "dist", do.log = T, colorkey = TRUE)
 
+#
 zn.lm <- lm(log(zinc) ~ sqrt(dist), meuse)
 meuse.grid$pred <- predict(zn.lm, meuse.grid)
 meuse.grid$se.fit <- predict(zn.lm, meuse.grid, se.fit = TRUE)$se.fit
 as.data.frame(meuse.grid) %>% head()
 spplot(meuse.grid, "pred", do.log = T, colorkey = TRUE)
 
+#
 meuse.k1 <- krige(log(zinc) ~ sqrt(dist), meuse, meuse.grid) # Equivalente a OLS
 as.data.frame(meuse.k1) %>% head()
 spplot(meuse.k1, "var1.pred", do.log = T, colorkey = TRUE)
 
+# 
 meuse.k2 <- krige(log(zinc) ~ 1, meuse, meuse.grid , degree=2) # Polinomio de grado 2
 as.data.frame(meuse.k2) %>% head()
 spplot(meuse.k2, "var1.pred", do.log = T, colorkey = TRUE)
