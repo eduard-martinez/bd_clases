@@ -19,7 +19,7 @@ dmsp = "https://www.ngdc.noaa.gov/eog/dmsp/downloadV4composites.html"
 cat('Los datos de DSMP están anuales desde 1992 a 2013')
 
 # layer colombia
-country = st_as_sf(map("world", plot = F, fill = T)) %>% subset(ID=="Colombia")
+country = st_as_sf(map("world", plot = F, fill = T)) %>% subset(ID=="Ecuador")
 
 # obtener URL de los raster a descargar
 lista_link = read_html(dmsp) %>% html_nodes('a') %>% 

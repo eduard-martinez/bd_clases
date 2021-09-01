@@ -9,7 +9,7 @@
 #--- limpiar entorno y cargar paquetes ---#
 rm(list=ls())
 require(pacman)
-p_load(here , tidyverse , sf , raster , rvest , xml2)
+p_load(here , tidyverse , sf , raster , rvest , xml2 , maps)
 path = here('','')
 
 # rutas a los datos

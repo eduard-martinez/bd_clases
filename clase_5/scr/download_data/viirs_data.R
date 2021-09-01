@@ -9,7 +9,7 @@
 #--- limpiar entorno y cargar paquetes ---#
 rm(list=ls())
 require(pacman)
-p_load(here , tidyverse , sf , raster , rvest , xml2)
+p_load(here , tidyverse , sf , raster , rvest , xml2, maps)
 path = here('','')
 
 # rutas a los datos
@@ -28,11 +28,11 @@ set es mejor para sus aplicaciones. Las versiones anuales solo se realizan con e
 Versión "vcm", excluyendo cualquier dato afectado por luz parásita.')
 
 # layer colombia
-country = st_as_sf(map("world", plot = F, fill = T)) %>% subset(ID=="Colombia")
+country = st_as_sf(map("world", plot = F, fill = T)) %>% subset(ID=="Ecuador")
 
 # obtener URL de los raster a descargar
 lista_link = read_html(viirs) %>% html_nodes('a') %>% 
-              html_attr('href') %>% as.character() %>% .[grep('vcmcfg',.)] %>% .[grep('75N180W',.)] # Ojo dejar las de 180
+              html_attr('href') %>% as.character() %>% .[grep('vcmcfg',.)] %>% .[grep('180W00N',.)] # Ojo dejar las de 180
 
 # select year a descargar
 years = 2012:2019 

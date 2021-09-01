@@ -34,11 +34,11 @@ browseURL("https://economia.uniandes.edu.co/sites/default/files/observatorio/Res
 
 ## qué es un raster?
 dev.off()
-grid.raster(readPNG("clase_5/pics/raster.png")) 
+grid.raster(readPNG("clase_5/pics/raster.png")) # fuente: https://www.neonscience.org
 
 ## resolucion
 dev.off()
-grid.raster(readPNG("clase_5/pics/rasterize.png")) 
+grid.raster(readPNG("clase_5/pics/rasterize.png")) # poner fuente
 
 ## bandas de un raster
 dev.off()
@@ -65,6 +65,7 @@ luces_s[[1]] %>% max(na.rm = T)
 luces_s[[1]] %>% min(na.rm = T)
 luces_s[[1]] %>% as.vector() %>% summary() 
 luces_s[[1]][is.na(luces_s[[1]])==T] # Reemplazar NA's
+luces_s[[1]][2000:2010,2000:2010]
 luces_s[[1]][2000:2010,2000:2010] %>% table() # Sustraer una parte de la matriz
 
 ## puedo reproyectar un raster?
@@ -76,7 +77,8 @@ luces_new_crs[[1]][2000:2010,2000:2010] # no se alteran las geometrias
 ## hacer clip a un raster
 medellin = opq(bbox = getbb("Medellín Colombia")) %>%
            add_osm_feature(key = "boundary", value = "administrative") %>% osmdata_sf()
-medellin = medellin$osm_multipolygons %>% subset(admin_level==7) %>% subset(name=="Zona Urbana Medellín")
+medellin = medellin$osm_multipolygons
+medellin = medellin  %>% dplyr::filter(admin_level==7) %>%  dplyr::filter(name=="Zona Urbana Medellín")
 ggplot() + geom_sf(data=medellin , col="red") + theme_bw() 
 
 luces_medellin_1 = st_crop(luces_s,medellin) # crop luces de Colombia con polygono de Medellin
@@ -124,15 +126,24 @@ building %>% head()
 
 ggplot() + geom_sf(data = building , aes(fill=building) , col=NA)
 
-## extraer informacion de un raster (opcion 2)
+## extraer informacion de un raster (opcion 1)
 luces_building = st_extract(x = luces_medellin, at = building) %>% st_as_sf()
-
 luces_building %>% head()
 
 ## extraer informacion de un raster (opcion 2)
 luces_medellin_sf = st_as_sf(x = luces_medellin, as_points = T, na.rm = T) # raster to sf (points)
+luces_medellin_sf
+
+ggplot() + geom_sf(data = luces_medellin_sf , aes(col=date_202002))  + 
+scale_fill_viridis(option="A" , na.value='white') +
+geom_sf(data=medellin , fill=NA , col="green") + theme_bw() 
 
 luces_medellin_sf2 = st_as_sf(x = luces_medellin, as_points = F, na.rm = T) # raster to sf (polygons)
+
+ggplot() + geom_sf(data = luces_medellin_sf2 , aes(fill=date_202002),col=NA)  + 
+scale_fill_viridis(option="A" , na.value='white') +
+geom_sf(data=medellin , fill=NA , col="green") + theme_bw()  + 
+geom_sf(data = building , col=NA , fill="green")
 
 luces_building_2 = st_join(x=building , y=luces_medellin_sf2 , largest=F) # join layers
 
@@ -172,6 +183,10 @@ login_earthdata(username = "ef.martinezg")
 ## log in: Copernicus Open Access Hub
 browseURL("https://scihub.copernicus.eu/dhus/#/self-registration")    
 login_CopHub(username = "ef.martinezg")
+
+## log in: 
+browseURL("https://ers.cr.usgs.gov/register/")
+login_USGS("ef.martinezg")
 
 # Print the status of all services:
 services()
