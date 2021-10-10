@@ -19,20 +19,20 @@ browseURL("https://geoportal.dane.gov.co/servicios/descarga-y-metadatos/descarga
 # read shape
 points = st_read("clase_2/input/points_barranquilla.shp")
 points
+points %>% class() # get class
 
 # plot points
-leaflet() %>% addTiles() %>% addCircleMarkers(data = points[1:5,])
+leaflet() %>% addTiles() %>% addCircleMarkers(data = points[,])
 
 # geometry
 points %>% crs() # get CRS
+points %>% st_crs() # get CRS
 
 points %>% st_bbox() # get bbox
 
 points %>% st_geometry() # get vertices
 
 # attributes
-points %>% class() # get class
-
 points %>% colnames() # get column names
 
 points$MPIO_CCDGO %>% table() # frequency table

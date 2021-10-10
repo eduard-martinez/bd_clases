@@ -27,7 +27,7 @@ getbb("Quito Ecuador")
 ameni_osm = opq(bbox = getbb("Quito Ecuador")) %>%
               add_osm_feature(key = "amenity", value = "bar") %>%
               add_osm_feature(key = "amenity", value = "pub") %>%
-              add_osm_feature(key = "amenity", value = "cafe") %>%
+              add_osm_feature(key = "building", value = "hotel") %>%
               osmdata_sf()
 ameni_osm %>% class()
 ameni_osm

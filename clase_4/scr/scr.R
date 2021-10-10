@@ -158,9 +158,9 @@ ggsave("clase_4/output/moran_plot.png")
 cat("La hipotesis nula es que los valores se distribuyen aleatoriamente atravez de los polygonos")
 moran.test(boston_sp$estimate, listw = w_boston)
 
-#=========================#
+#====================================#
 # [5.] Amenitis y precio de vivienda #
-#=========================#
+#====================================#
 
 # get amenity data
 bar = opq(bbox = getbb("Boston USA")) %>% add_osm_feature(key = "amenity", value = "bar") %>% 
@@ -198,79 +198,59 @@ df = lapply(df, function(x) x = ifelse(is.na(x),0,x)) %>% data.frame()
 boston = left_join(boston,df,"GEOID")
 lm(estimate ~ bar + cafe + pub + restaurant + school , data = boston) %>% summary()
 
-# veamos la correlacion espacial entre dos variables
-boston = left_join(boston_sp@data,df,"GEOID")
-moran.plot3 <- function(x,y,wfile) # funcion tomada de Juan Tomas Sayago (github: jtsayagog)
-{ 
-    xname <- deparse(substitute(x)) # get name of variable 
-    yname =deparse(substitute(y))
-    zx <- (x - mean(x))/sd(x) 
-    zy =(y - mean(y))/sd(y)
-    wzy <- lag.listw(wfile,zy, zero.policy=TRUE) 
-    morlm <- lm(wzy ~ zx) 
-    aa <- morlm$coefficients[1] 
-    mori <- morlm$coefficients[2] 
-    par(pty="s") 
-    plot(zx,wzy,xlab=xname,ylab=paste("Spatial Lag of ",yname)) 
-    abline(aa,mori,col=2) 
-    abline(h=0,lty=2,col=4) 
-    abline(v=0,lty=2,col=4) 
-    title(paste("Moran Scatterplot I= ",format(round(mori,4)))) 
-} 
+#===================#
+# [6.] MORAN y LISA #
+#===================#
 
-w_boston = nb2listw(nb_boston, style = "B", zero.policy = T)
-w_boston 
-moran.plot3(boston_sp$estimate,boston_sp$restaurant, w_boston)
+# estimar la correlacion espacial entre dos variables
+source("clase_4/scr/moran.R")
+boston_sp@data = left_join(boston_sp@data,df,"GEOID")
 
-# intentemos agregar el rezago espacial del precio de la vivienda
-sar.chi = lagsarlm(estimate ~ bar + cafe + pub + restaurant + school , data=boston_sp@data, w_boston , na.action = F)
-summary(sar.chi)
+# Preparar sp
+nb_boston = poly2nb(pl=boston_sp , queen=T) # Definir vecinos
+w_boston = nb2listw(nb_boston, style = "B", zero.policy = T) # Matrix de pesos
+W  = as(w_boston, "symmetricMatrix")
+W  = as.matrix(W/rowSums(W))
+W[which(is.na(W))] = 0
 
+# variables a usar en correlacion
+x = boston_sp@data[,"bar"] # outcome
+y = boston_sp@data[,"restaurant"] # outcome lag
 
-#====================#
-# [6.] Interpolacion #
-#====================#
+# reemplazar los NA de las variables
+x[is.na(x)] = 0 
+y[is.na(y)] = 0 
 
-# clean environment
-rm(list=ls())
+# Estimar el indice de moran global, local y las simulaciones del indice
+moran = moran_I(x, y, W)
+moran_global = moran[[1]]
+moran_local = moran[[2]]  # local values
+simulaciones_locales = simula_moran(x, y, W)$local_sims
 
-# load data
-data(meuse) # paquete sp
-meuse %>% head()
-coordinates(meuse) <- c("x", "y")
-spplot(meuse, "zinc", do.log = T, colorkey = TRUE)
+# Construir significacia de las estimaciones locales
+probabilidades = c(0.025, 1-0.025) # 5% a dos colas
+intervalos = t( apply(simulaciones_locales, 1, function(x) quantile(x, probs=probabilidades)))
+significancia = (moran_local < intervalos[,1] )  | ( moran_local > intervalos[,2] )
 
-data(meuse.grid) # paquete sp
-meuse.grid %>% head()
-coordinates(meuse.grid) <- c("x", "y")
-meuse.grid <- as(meuse.grid, "SpatialPixelsDataFrame")
-spplot(idw.out, "var1.pred", do.log = T, colorkey = TRUE)
+# Identificar clusters LISA
+xp = (x-mean(x))/sd(x)
+yp = (y-mean(y))/sd(y)
+patterns = as.character(interaction(xp > 0, W%*%yp > 0) ) 
+patterns = patterns %>% gsub("TRUE","Alto",.) %>%  gsub("FALSE","Bajo",.)
 
-## 1 Non-geostatistical Interpolation Methods
+# Agregar informacion al mapa
+boston_sp$significancia = significancia
+boston_sp$lisa = patterns
 
-## 1.1 Inverse Distance Weighted Interpolation
-idw.out <- gstat::idw(zinc ~ 1, meuse, meuse.grid, idp = 2.5)
-as.data.frame(idw.out) %>% head()
-spplot(idw.out, "var1.pred", do.log = T, colorkey = TRUE)
+# Agregar estimaciones al mapa 
+boston_sf = boston_sp %>% st_as_sf() %>%
+            mutate(lisa = gsub("\\.","-",lisa) , lisa = ifelse(significancia==T,lisa,"Sin relación") %>% as.character())  
 
-## 1.2 Linear Regression
-spplot(meuse.grid, "dist", do.log = T, colorkey = TRUE)
-
-#
-zn.lm <- lm(log(zinc) ~ sqrt(dist), meuse)
-meuse.grid$pred <- predict(zn.lm, meuse.grid)
-meuse.grid$se.fit <- predict(zn.lm, meuse.grid, se.fit = TRUE)$se.fit
-as.data.frame(meuse.grid) %>% head()
-spplot(meuse.grid, "pred", do.log = T, colorkey = TRUE)
-
-#
-meuse.k1 <- krige(log(zinc) ~ sqrt(dist), meuse, meuse.grid) # Equivalente a OLS
-as.data.frame(meuse.k1) %>% head()
-spplot(meuse.k1, "var1.pred", do.log = T, colorkey = TRUE)
-
-# 
-meuse.k2 <- krige(log(zinc) ~ 1, meuse, meuse.grid , degree=2) # Polinomio de grado 2
-as.data.frame(meuse.k2) %>% head()
-spplot(meuse.k2, "var1.pred", do.log = T, colorkey = TRUE)
-
+# plot map
+ggplot() + geom_sf(data=boston_sf , aes(fill=lisa) , col="black" , alpha=1 , size=0.05) + 
+scale_fill_manual(values = c("#FF0033", "#FF0099", "#33CCFF", "#0033FF", "white")) +
+scale_y_continuous(expand=c(0,0)) + scale_x_continuous(expand=c(0,0)) +
+labs(y = "", x = "", fill = "Patrón") + theme_light() + north(data=boston_sf , location="topleft") + 
+scalebar(data=boston_sf, dist=5 , transform=T , dist_unit="km" , location="bottomleft")
+ggsave("clase_4/output/LISA_.pdf")
 

@@ -8,7 +8,7 @@
 
   * Tidyverse
 
-La presentación se encuentra [[aquí](https://eduard-martinez.gitlab.io/bd-intro-r)].
+La presentación se encuentra [[aquí](https://lectures-blog.gitlab.io/intro-r)].
 
 ## clase_2: Introdución a GIS en R
 
@@ -16,7 +16,7 @@ La presentación se encuentra [[aquí](https://eduard-martinez.gitlab.io/bd-intr
   
   * Modelo de equilibrio espacial (Aplicación en R)
 
-La presentación se encuentra [[aquí](https://eduard-martinez.gitlab.io/intro-gis-r)].
+La presentación se encuentra [[aquí](https://lectures-blog.gitlab.io/intro-gis-r)].
 
 ## clase_3: OpenStreetMap Data in R
 
